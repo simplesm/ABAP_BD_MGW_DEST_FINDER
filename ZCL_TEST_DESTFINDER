@@ -1,0 +1,40 @@
+class ZCL_F_IM_VACBU_DESTFINDER definition
+  public
+  final
+  create public .
+
+public section.
+
+  interfaces /IWFND/IF_MGW_DEST_FINDER_BADI .
+  interfaces IF_BADI_INTERFACE .
+protected section.
+private section.
+ENDCLASS.
+
+
+
+CLASS ZCL_F_IM_VACBU_DESTFINDER IMPLEMENTATION.
+
+
+  METHOD /iwfnd/if_mgw_dest_finder_badi~get_system_aliases.
+        TRY .
+            DATA(lo_destin_finder) = /iwfnd/cl_destin_finder=>get_destination_finder( ).
+            DATA(lt_user_roles) = lo_destin_finder->get_roles_for_user( iv_user = iv_user ).
+            LOOP AT ct_system_aliases ASSIGNING FIELD-SYMBOL(<fs_alias>)
+              WHERE user_role IS NOT INITIAL.
+              IF line_exists( lt_user_roles[ user_role = <fs_alias>-user_role ] ).
+                <fs_alias>-is_def_for_meta = abap_true.
+                <fs_alias>-is_default = abap_true.
+                DATA(l_role) = <fs_alias>-user_role.
+              ELSE.
+                CONTINUE.
+              ENDIF.
+            ENDLOOP.
+            IF l_role IS NOT INITIAL.
+              DELETE ct_system_aliases WHERE user_role <> l_role.
+            ENDIF.
+          CATCH cx_root.
+            RAISE EXCEPTION TYPE /iwfnd/cx_mgw_dest_finder.
+        ENDTRY.
+  ENDMETHOD.
+ENDCLASS.
